@@ -1,4 +1,5 @@
 
+
 aws_region           = "us-east-1"
 env_name             = "it473-cape-prj-g4"
 vpc_cidr             = "10.0.0.0/16"
@@ -10,4 +11,3 @@ wp_ami_id            = "ami-0c55b159cbfafe1f0" # Example Amazon Linux 2
 wp_instance_type     = "t3.micro"
 efs_mount_point      = "fs-12345678.efs.us-east-1.amazonaws.com"
 public_subnet_ids    = ["subnet-abc123", "subnet-def456"]
-vpc_id               = "vpc-123456"
