@@ -9,7 +9,10 @@ variable "aws_secret_key" {
   type        = string
   sensitive   = true
 }
-
+variable "ami_id" {
+  description = "AMI for WordPress EC2 instances"
+  default     = "ami-0655cec52acf2717b"
+}
 variable "aws_region" {
   description = "AWS Region"
   type        = string
@@ -65,7 +68,7 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
-variable "vpc_id" {
-  description = "VPC ID for resources"
-  type        = string
-}
+# variable "vpc_id" {
+#   description = "VPC ID for resources"
+#   type        = string
+# }

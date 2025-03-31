@@ -24,18 +24,22 @@ This capstone project demonstrates how to deploy a **highly available, secure, a
 
 ## 🧱 Project Structure
 
-```plaintext
 .
 ├── provider.tf             # AWS provider configuration
-├── backend.tf              # lOCAL bACKEND
+├── backend.tf              # Local backend configuration
 ├── variables.tf            # Input variables definition
 ├── terraform.tfvars        # Variable values (excluded from Git)
 ├── res_network.tf          # VPC, Subnets, IGW, NAT, etc.
 ├── res_wordpress.tf        # EC2 Auto Scaling, ALB, Launch Template
 ├── res_iam.tf              # IAM roles for EC2 and other services
+├── res_ads.tf              # Active Directory Service / EC2 Domain Join
+├── res_monitoring.tf       # CloudWatch, Alarms, Application Insights
+├── res_rds.tf              # RDS DB Instance for WordPress
+├── res_secrets.tf          # Secrets Manager or SSM Parameter Store
 ├── user_data_wordpress.sh  # WordPress EC2 setup script
 ├── .gitignore              # Terraform & secret exclusions
 └── README.md               # Project documentation
+
 
 ## ⚙️ Deployment Instructions
 
@@ -90,16 +94,20 @@ terraform apply
 
 📥 Example Variables (terraform.tfvars)
 
-env_name              = "ecom"
-aws_region            = "us-east-1"
-vpc_cidr              = "10.0.0.0/16"
-public_subnet_cidrs   = ["10.0.1.0/24", "10.0.2.0/24"]
-private_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24"]
-public_azs            = ["us-east-1a", "us-east-1b"]
-private_azs           = ["us-east-1a", "us-east-1b"]
-wp_ami_id             = "ami-0c55b159cbfafe1f0"
-wp_instance_type      = "t3.micro"
-efs_mount_point       = "fs-xxxxxx.efs.us-east-1.amazonaws.com"
+aws_region           = "us-east-1"
+aws_access_key       = "AKIAxxxxxxxxxxxxxxxx"   # 🔐 Not recommended to hardcode
+aws_secret_key       = "O1aHRZxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # 🔐 Use environment variables or credentials file
+env_name             = "it473-cape-prj-g4"
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
+public_azs           = ["us-east-1a", "us-east-1b"]
+private_azs          = ["us-east-1a", "us-east-1b"]
+wp_ami_id            = "ami-0c55b159cbfafe1f0" # Example Amazon Linux 2
+wp_instance_type     = "t3.micro"
+efs_mount_point      = "fs-12345678.efs.us-east-1.amazonaws.com"
+public_subnet_ids    = ["subnet-abc123", "subnet-def456"]
+
 
 
 
@@ -116,3 +124,16 @@ Terraform AWS Provider https://registry.terraform.io/providers/hashicorp/aws/lat
 🌐 Integrate CloudFront + WAF for enhanced content delivery and security
 🔁 Enable CI/CD pipeline with GitHub Actions or AWS CodePipeline
 💾 Add Terraform modules for automated backups and DNS failover
+
+
+🧩 GitHub Repository
+This project is hosted on GitHub:
+🔗 https://github.com/shaifalikanji/IT473---Project
+
+🔀 Branches Overview
+Branch	Purpose	Status
+main	Default branch with stable code	✅ Up to date
+enhance	Development branch for new features and improvements	🔄 6 commits ahead, 4 behind main
+We follow a feature branching strategy where updates are committed to enhance and later merged into main via pull requests after review and testing.
+
+📌 Note: Always create pull requests from enhance to main for production readiness.
