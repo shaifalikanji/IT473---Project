@@ -1,3 +1,59 @@
+resource "aws_route53_zone" "main" {
+  name = "aws.cloud-people.net"
+}
+resource "aws_route53_record" "wordpress" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "portal.aws.cloud-people.net" # or "aws.cloud-people.net" for root
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.wp_alb.dns_name
+    zone_id                = aws_lb.wp_alb.zone_id
+    evaluate_target_health = true
+  }
+}
+resource "aws_route53_record" "wordpress_www" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "www.aws.cloud-people.net"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.wp_alb.dns_name
+    zone_id                = aws_lb.wp_alb.zone_id
+    evaluate_target_health = true
+  }
+}
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.wp_cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+    }
+  }
+
+  zone_id = aws_route53_zone.main.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  ttl     = 300
+  records = [each.value.record]
+}
+
+resource "aws_acm_certificate" "wp_cert" {
+  domain_name               = "portal.aws.cloud-people.net"
+  validation_method         = "DNS"
+  subject_alternative_names = ["www.aws.cloud-people.net"] # optional
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+resource "aws_acm_certificate_validation" "wp_cert_validation" {
+  certificate_arn         = aws_acm_certificate.wp_cert.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
+
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -222,8 +278,8 @@ resource "aws_iam_role" "rds_monitoring" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action    = "sts:AssumeRole",
-      Effect    = "Allow",
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
       Principal = {
         Service = "monitoring.rds.amazonaws.com"
       }
@@ -260,53 +316,53 @@ resource "aws_cloudwatch_dashboard" "infrastructure_dashboard" {
     widgets = [
       {
         type = "metric",
-        x = 0, y = 0, width = 6, height = 6,
+        x    = 0, y = 0, width = 6, height = 6,
         properties = {
           title = "ASG Average CPU",
           metrics = [
             ["AWS/EC2", "CPUUtilization", "AutoScalingGroupName", aws_autoscaling_group.wp_asg.name]
           ],
           period = 300,
-          stat = "Average",
+          stat   = "Average",
           region = "us-east-1"
         }
       },
       {
         type = "metric",
-        x = 6, y = 0, width = 6, height = 6,
+        x    = 6, y = 0, width = 6, height = 6,
         properties = {
           title = "RDS CPU",
           metrics = [
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", aws_db_instance.wordpress.id]
           ],
           period = 300,
-          stat = "Average",
+          stat   = "Average",
           region = "us-east-1"
         }
       },
       {
         type = "metric",
-        x = 0, y = 6, width = 6, height = 6,
+        x    = 0, y = 6, width = 6, height = 6,
         properties = {
           title = "ALB Request Count",
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", aws_lb.wp_alb.arn_suffix]
           ],
           period = 300,
-          stat = "Sum",
+          stat   = "Sum",
           region = "us-east-1"
         }
       },
       {
         type = "metric",
-        x = 6, y = 6, width = 6, height = 6,
+        x    = 6, y = 6, width = 6, height = 6,
         properties = {
           title = "ALB Network In/Out",
           metrics = [
             ["AWS/ApplicationELB", "ProcessedBytes", "LoadBalancer", aws_lb.wp_alb.arn_suffix]
           ],
           period = 300,
-          stat = "Sum",
+          stat   = "Sum",
           region = "us-east-1"
         }
       }
@@ -322,40 +378,40 @@ resource "aws_cloudwatch_dashboard" "application_dashboard" {
     widgets = [
       {
         type = "metric",
-        x = 0, y = 0, width = 6, height = 6,
+        x    = 0, y = 0, width = 6, height = 6,
         properties = {
           title = "ALB 5XX Errors",
           metrics = [
             ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", aws_lb.wp_alb.arn_suffix]
           ],
           period = 300,
-          stat = "Sum",
+          stat   = "Sum",
           region = "us-east-1"
         }
       },
       {
         type = "metric",
-        x = 6, y = 0, width = 6, height = 6,
+        x    = 6, y = 0, width = 6, height = 6,
         properties = {
           title = "ALB 4XX Errors",
           metrics = [
             ["AWS/ApplicationELB", "HTTPCode_ELB_4XX_Count", "LoadBalancer", aws_lb.wp_alb.arn_suffix]
           ],
           period = 300,
-          stat = "Sum",
+          stat   = "Sum",
           region = "us-east-1"
         }
       },
       {
         type = "metric",
-        x = 0, y = 6, width = 6, height = 6,
+        x    = 0, y = 6, width = 6, height = 6,
         properties = {
           title = "Unhealthy Hosts",
           metrics = [
             ["AWS/ApplicationELB", "UnHealthyHostCount", "TargetGroup", aws_lb_target_group.wp_tg.arn_suffix, "LoadBalancer", aws_lb.wp_alb.arn_suffix]
           ],
           period = 300,
-          stat = "Average",
+          stat   = "Average",
           region = "us-east-1"
         }
       }
@@ -365,7 +421,7 @@ resource "aws_cloudwatch_dashboard" "application_dashboard" {
 resource "random_password" "db_password" {
   length           = 32
   special          = true
-  override_special = "!#$%^&*()-_=+[]{}|;:,.<>?~" # Excludes '/', '@', '"', and space
+  override_special = "!_-" # Excludes '/', '@', '"', and space
 
 }
 
@@ -403,12 +459,15 @@ resource "aws_launch_template" "wordpress_lt" {
   name_prefix   = "${var.env_name}-wp-lt"
   image_id      = var.ami_id
   instance_type = var.wp_instance_type
+user_data = base64encode(templatefile("${path.module}/user_data_wordpress.tpl", {
+  efs_mount_point = var.efs_mount_point,
+  db_password     = random_password.db_password.result,
+  db_host         = aws_db_instance.wordpress.address,
+  db_name         = "wordpress", # <-- add this line
+  db_user         = "admin"      # <-- optional but recommended
+}))
 
-  user_data = base64encode(templatefile("${path.module}/user_data_wordpress.sh", {
-    efs_mount_point = var.efs_mount_point,
-    db_password     = random_password.db_password.result,
-    db_host         = aws_db_instance.wordpress.address
-  }))
+
 
   vpc_security_group_ids = [aws_security_group.wp_sg.id]
 
@@ -419,6 +478,7 @@ resource "aws_launch_template" "wordpress_lt" {
   lifecycle {
     create_before_destroy = true
   }
+    update_default_version = true
 }
 
 # Auto Scaling Group
@@ -470,10 +530,28 @@ resource "aws_lb_listener" "wp_listener" {
   protocol          = "HTTP"
 
   default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+resource "aws_lb_listener" "wp_https_listener" {
+  load_balancer_arn = aws_lb.wp_alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate_validation.wp_cert_validation.certificate_arn
+
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.wp_tg.arn
   }
 }
+
+
 resource "aws_security_group" "wp_sg" {
   name        = "${var.env_name}-wp-sg"
   description = "Security group for WordPress EC2"
@@ -515,6 +593,12 @@ resource "aws_security_group" "lb_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+    ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    }
 
   egress {
     from_port   = 0
@@ -540,7 +624,7 @@ resource "aws_db_subnet_group" "wordpress" {
 }
 
 resource "aws_db_instance" "wordpress" {
-  identifier             = "wp-db"
+  identifier             = "wordpress"
   allocated_storage      = 20
   storage_type           = "gp2"
   engine                 = "mysql"
