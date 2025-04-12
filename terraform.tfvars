@@ -1,3 +1,5 @@
+# aws_access_key       = "AKIAxxxxxxxxxxxxxxxx"   # 🔐 Not recommended to hardcode
+# aws_secret_key       = "O1aHRZxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # 🔐 Use environment variables or credentials file
 
 
 aws_region           = "us-east-1"
